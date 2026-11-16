@@ -34,6 +34,8 @@ import {
   type IntegrityReport,
   type IntegrityReportResponseDto,
   type LibraryResponseDto,
+  type LicenseKeyDto,
+  type LicenseResponseDto,
   type LoginResponseDto,
   type MaintenanceStatusResponseDto,
   type MapMarkerResponseDto,
@@ -72,6 +74,7 @@ import {
   type UserPreferencesResponseDto,
   type UserPreferencesUpdateDto,
   type UserResponseDto,
+  type UserUpdateMeDto,
   type WorkflowCreateDto,
   type WorkflowResponseDto,
   type WorkflowStepDto,
@@ -154,6 +157,8 @@ export class MockData {
   isOnboarded = true;
 
   private preferences = factory.preferences();
+  private serverLicense: LicenseResponseDto | null = null;
+  private readonly activationKeys = new Map<string, string>();
   private authStatus = factory.authStatus();
   private integrityReport = payload.integrityReport();
   private maintenanceStatus: MaintenanceStatusResponseDto = { action: MaintenanceAction.Start, active: true };
@@ -270,6 +275,58 @@ export class MockData {
     Object.assign(this.user, { email: dto.email, name: dto.name, isAdmin: true });
     this.serverConfig.isInitialized = true;
     return this.user;
+  }
+
+  updateMyUser({ email, name, avatarColor }: UserUpdateMeDto) {
+    Object.assign(this.user, {
+      email: email ?? this.user.email,
+      name: name ?? this.user.name,
+      avatarColor: avatarColor ?? this.user.avatarColor,
+    });
+    return this.user;
+  }
+
+  addActivationKey(licenseKey: string, activationKey: string) {
+    this.activationKeys.set(licenseKey, activationKey);
+    return this;
+  }
+
+  getActivationKey(licenseKey: string) {
+    return this.activationKeys.get(licenseKey);
+  }
+
+  getServerLicense() {
+    return this.serverLicense;
+  }
+
+  setServerLicense(dto: LicenseKeyDto) {
+    this.serverLicense = { ...dto, activatedAt: new Date().toISOString() };
+    this.aboutInfo.licensed = true;
+    return this.serverLicense;
+  }
+
+  deleteServerLicense() {
+    this.serverLicense = null;
+    this.aboutInfo.licensed = false;
+  }
+
+  setUserLicense(dto: LicenseKeyDto) {
+    this.user.license = { ...dto, activatedAt: new Date().toISOString() };
+    return this.user.license;
+  }
+
+  deleteUserLicense() {
+    this.user.license = null;
+  }
+
+  albumStatistics() {
+    const albums = [...this.albums.values()];
+    const owned = albums.filter((album) => album.albumUsers[0]?.user.id === this.user.id);
+    return {
+      owned: owned.length,
+      shared: albums.filter((album) => album.shared).length,
+      notShared: owned.filter((album) => !album.shared).length,
+    };
   }
 
   changePassword() {
