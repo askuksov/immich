@@ -98,6 +98,22 @@ const serverFeatures = (overrides: Partial<ResponseOf<'getServerFeatures'>> = {}
 
 const backups = (): ResponseOf<'listDatabaseBackups'> => ({ backups: [] });
 
+const storageTemplateOptions = (): ResponseOf<'getStorageTemplateOptions'> => ({
+  secondOptions: ['s', 'ss', 'SSS'],
+  minuteOptions: ['m', 'mm'],
+  dayOptions: ['d', 'dd'],
+  weekOptions: ['W', 'WW'],
+  hourOptions: ['h', 'hh', 'H', 'HH'],
+  yearOptions: ['y', 'yy'],
+  monthOptions: ['M', 'MM', 'MMM', 'MMMM'],
+  presetOptions: [
+    '{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}',
+    '{{y}}/{{MM}}/{{dd}}/{{filename}}',
+    '{{y}}/{{MMMM}}/{{filename}}',
+    '{{album}}/{{filename}}',
+  ],
+});
+
 const aboutInfo = (overrides: Partial<ResponseOf<'getAboutInfo'>> = {}): ResponseOf<'getAboutInfo'> => ({
   version: 'v2.2.3',
   versionUrl: 'https://github.com/immich-app/immich/releases/tag/v2.2.3',
@@ -337,5 +353,6 @@ export const payload = {
   queues,
   notifications,
   backups,
+  storageTemplateOptions,
   integrityReport,
 };

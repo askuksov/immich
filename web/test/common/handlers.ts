@@ -24,6 +24,13 @@ export const createHandlers = (data: MockData): Handlers => {
     getAdminConfig: () => ({ json: data.adminConfig }),
     getAdminConfigDefaults: () => ({ json: data.adminConfig }),
     updateAdminConfig: ({ body }) => ({ json: data.updateAdminConfig(body) }),
+    getConfig: () => ({ json: data.adminConfig }),
+    updateConfig: ({ body }) => ({ json: data.updateAdminConfig(body) }),
+    getStorageTemplateOptions: () => ({ json: data.storageTemplateOptions }),
+    getNotificationTemplateAdmin: ({ params, body }) => ({
+      json: { name: params.name, html: `<p>${body.template}</p>` },
+    }),
+    sendTestEmailAdmin: () => ({ json: { messageId: 'test-message-id' } }),
     getServerFeatures: () => ({ json: data.serverFeatures }),
     getAboutInfo: () => ({ json: data.aboutInfo }),
     getStorage: () => ({ json: data.storage }),
@@ -130,6 +137,7 @@ export const createHandlers = (data: MockData): Handlers => {
     setMaintenanceMode: () => ({ status: 201 }),
     maintenanceLogin: ({ body }) => ({ status: 201, json: { username: body.token ? data.user.name : '' } }),
     getMaintenanceStatus: () => ({ json: data.getMaintenanceStatus() }),
+    detectPriorInstall: () => ({ json: { storage: [] } }),
     getQueuesLegacy: () => ({ json: data.queues }),
     getIntegrityReportSummary: () => ({ json: data.getIntegrityReport() }),
     getIntegrityReport: ({ params }) => ({ json: data.integrityReportPage(params) }),
@@ -343,6 +351,7 @@ export const createHandlers = (data: MockData): Handlers => {
     }),
 
     searchWorkflows: () => ({ json: data.workflowList() }),
+    getWorkflowLogs: ({ params }) => ({ json: data.workflowLogPage(params) }),
     deleteWorkflow: ({ params }) => (data.deleteWorkflow(params.id) ? { status: 204 } : notFound),
     getWorkflowTriggers: () => ({
       json: Object.values(WorkflowTrigger).map((trigger) => ({ trigger, types: [WorkflowType.AssetV1] })),
