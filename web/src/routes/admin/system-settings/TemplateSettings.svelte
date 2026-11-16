@@ -2,10 +2,10 @@
   import SettingAccordion from '#lib/components/shared-components/settings/SettingAccordion.svelte';
   import FormatMessage from '#lib/elements/FormatMessage.svelte';
   import EmailTemplatePreviewModal from '#lib/modals/EmailTemplatePreviewModal.svelte';
-  import { createPreloadedQuery } from '#lib/queries/client.ts';
+  import { createPreloadedQuery, executeMutation } from '#lib/queries/client.ts';
   import { getAdminConfigQuery } from '#lib/queries/config-admin.query.ts';
-  import { handleError } from '#lib/utils/handle-error.ts';
-  import { getNotificationTemplateAdmin, type AdminConfigDto, type AdminConfigTemplateEmailsDto } from '@immich/sdk';
+  import { getNotificationTemplateAdminMutation } from '#lib/queries/notification-admin.query.ts';
+  import { type AdminConfigDto, type AdminConfigTemplateEmailsDto } from '@immich/sdk';
   import { Button, Icon, LoadingSpinner, modalManager } from '@immich/ui';
   import { mdiEyeOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
@@ -22,16 +22,12 @@
 
   let loadingPreview = $state(false);
 
-  const getTemplate = async (name: string, template: string) => {
-    try {
-      loadingPreview = true;
-      const { html } = await getNotificationTemplateAdmin({ name, templateDto: { template } });
-      await modalManager.show(EmailTemplatePreviewModal, { html });
-    } catch (error) {
-      handleError(error, 'Could not load template.');
-    } finally {
-      loadingPreview = false;
-    }
+  const getTemplate = (name: string, template: string) => {
+    loadingPreview = true;
+    return executeMutation(getNotificationTemplateAdminMutation, [{ name, templateDto: { template } }], {
+      onSuccess: ({ html }) => void modalManager.show(EmailTemplatePreviewModal, { html }),
+      onSettled: () => (loadingPreview = false),
+    });
   };
 
   const templateConfigs = [

@@ -7,12 +7,13 @@
   import { authManager } from '#lib/managers/auth-manager.svelte.ts';
   import { featureFlagsManager } from '#lib/managers/feature-flags-manager.svelte.ts';
   import StorageTemplateVariablesModal from '#lib/modals/StorageTemplateVariablesModal.svelte';
-  import { createPreloadedQuery, executeMutation } from '#lib/queries/client.ts';
+  import { createPreloadedQuery, executeMutation, queryClient } from '#lib/queries/client.ts';
   import { getAdminConfigQuery, updateAdminConfigMutation } from '#lib/queries/config-admin.query.ts';
+  import { getStorageTemplateOptionsQuery } from '#lib/queries/system-config.query.ts';
   import { Route } from '#lib/route.ts';
-  import { getStorageTemplateOptions, type SystemConfigTemplateStorageOptionDto } from '@immich/sdk';
   import { Code, Heading, IconButton, Link, Text, modalManager } from '@immich/ui';
   import { mdiInformationOutline } from '@mdi/js';
+  import { createQuery } from '@tanstack/svelte-query';
   import handlebar from 'handlebars';
   import { cloneDeep } from 'lodash-es';
   import * as luxon from 'luxon';
@@ -50,14 +51,10 @@
     configToEdit.storageTemplate.template = DATE_TEMPLATE;
   }
 
-  let templateOptions: SystemConfigTemplateStorageOptionDto | undefined = $state();
-  let selectedPreset = $state('');
+  const templateOptionsQuery = createQuery(getStorageTemplateOptionsQuery, () => queryClient);
+  const templateOptions = $derived(templateOptionsQuery.data);
+  let selectedPreset = $state(config.storageTemplate.template);
   let customTemplate = $state(config.storageTemplate.template);
-
-  const getTemplateOptions = async () => {
-    templateOptions = await getStorageTemplateOptions();
-    selectedPreset = config.storageTemplate.template;
-  };
 
   const renderTemplate = (templateString: string) => {
     if (!templateOptions) {
@@ -281,7 +278,7 @@
     </div>
   {/if}
 
-  {#await getTemplateOptions() then}
+  {#if templateOptions}
     <div id="directory-path-builder" class="flex flex-col gap-4 {minified ? '' : 'ms-4 mt-4'}">
       <div class="flex flex-col gap-2">
         {@render templateOption(
@@ -337,5 +334,5 @@
         <SettingButtonsRow bind:configToEdit keys={['storageTemplate']} {disabled} />
       {/if}
     </div>
-  {/await}
+  {/if}
 </section>
