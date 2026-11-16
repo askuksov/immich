@@ -2,13 +2,15 @@
   import SearchPeople from '#lib/components/faces-page/PeopleSearch.svelte';
   import { timeBeforeShowLoadingSpinner } from '#lib/constants.ts';
   import { assetViewerManager } from '#lib/managers/asset-viewer-manager.svelte.ts';
-  import { getPeopleThumbnailUrl, handlePromiseError } from '#lib/utils.ts';
-  import { handleError } from '#lib/utils/handle-error.ts';
+  import { queryClient } from '#lib/queries/client.ts';
+  import { getAllPeopleQuery } from '#lib/queries/person.query.ts';
+  import { getPeopleThumbnailUrl } from '#lib/utils.ts';
   import { zoomImageToBase64 } from '#lib/utils/people-utils.ts';
   import { getPersonNameWithHiddenValue } from '#lib/utils/person.ts';
-  import { AssetTypeEnum, getAllPeople, type AssetFaceResponseDto, type PersonResponseDto } from '@immich/sdk';
+  import { AssetTypeEnum, type AssetFaceResponseDto, type PersonResponseDto } from '@immich/sdk';
   import { IconButton, LoadingSpinner } from '@immich/ui';
   import { mdiArrowLeftThin, mdiClose, mdiMagnify, mdiPlus } from '@mdi/js';
+  import { createQuery } from '@tanstack/svelte-query';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { linear } from 'svelte/easing';
@@ -26,22 +28,17 @@
 
   let { editedFace, assetId, assetType, onClose, onCreatePerson, onReassign }: Props = $props();
 
-  let allPeople: PersonResponseDto[] = $state([]);
-
+  const query = createQuery(
+    () => ({ ...getAllPeopleQuery({ withHidden: true, closestAssetId: editedFace.id }), staleTime: 0 }),
+    () => queryClient,
+  );
+  const allPeople = $derived(query.data?.people ?? []);
   let isShowLoadingPeople = $state(false);
 
-  async function loadPeople() {
+  onMount(() => {
     const timeout = setTimeout(() => (isShowLoadingPeople = true), timeBeforeShowLoadingSpinner);
-    try {
-      const { people } = await getAllPeople({ withHidden: true, closestAssetId: editedFace.id });
-      allPeople = people;
-    } catch (error) {
-      handleError(error, $t('errors.cant_get_faces'));
-    } finally {
-      clearTimeout(timeout);
-    }
-    isShowLoadingPeople = false;
-  }
+    return () => clearTimeout(timeout);
+  });
 
   // loading spinners
   let isShowLoadingNewPerson = $state(false);
@@ -53,10 +50,6 @@
   let searchName = $state('');
 
   let showPeople = $derived(searchName ? searchedPeople : allPeople.filter((person) => !person.isHidden));
-
-  onMount(() => {
-    handlePromiseError(loadPeople());
-  });
 
   const handleCreatePerson = async () => {
     const timeout = setTimeout(() => (isShowLoadingNewPerson = true), timeBeforeShowLoadingSpinner);
@@ -148,7 +141,7 @@
   </div>
   <div class="p-4 text-sm">
     <h2 class="mt-4 mb-8">{$t('all_people')}</h2>
-    {#if isShowLoadingPeople}
+    {#if isShowLoadingPeople && query.isPending}
       <div class="flex w-full justify-center">
         <LoadingSpinner />
       </div>
